@@ -4,7 +4,7 @@ param (
 )
 
 # Edit this to be your own OpenPGP/GnuGP keypair name
-$recipient = "sid@crypteron.com"
+$recipient = "you@youremail.com"
 
 ########################################################
 

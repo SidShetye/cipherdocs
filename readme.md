@@ -7,6 +7,9 @@ You want
 - to keep your private information, well, private even when the files are kept with someone else
 - simplicity ... just double click a file, edit/view it and be done with it. You find the default GPG workflow to be tedious and error prone.
 
+# End User Experience
+- Double click an encrypted file to work with it (e.g. double clicking `proposal.docx.gpg` directly opens it in Word) 
+
 # What does it do?
 It keeps your files encrypted while allowing seamless access to read/edit/update those files. Opening any encrypted file (e.g. `proposal.docx.gpg`) is a just a simple double-click in Windows Explorer. If you edit your document, those changes go back into the encrypted file without any additional effort. Note that you need to close the application used for editing the file (e.g. Microsoft Excel) with before these scripts proceed to check for changes and re-encrypting the file(s).
 

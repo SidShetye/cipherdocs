@@ -26,7 +26,7 @@ Installation takes seconds but encrypting all your files may take several minute
 1. Install [Gpg4Win](https://www.gpg4win.org/download.html). Basically get the `.exe` file and run it. Need more help? [Look here](https://www.gpg4win.org/doc/en/gpg4win-compendium_11.html).
 2. Create your OpenPGP certificate/keypair. Try the Kleopatra tool installed by Gpg4Win. [Details here](https://www.gpg4win.org/doc/en/gpg4win-compendium_12.html) 
 3. Clone/download this repository of files
-4. Using Notepad, edit the top of `CipherDocs.ps1` and `EncryptFiles.ps1` and replace the email inside `$recipient = "sid@crypteron.com"` to your OpenPGP/GnuPG keypair ID/name from the above step.
+4. Using Notepad, edit the top of `CipherDocs.ps1` and `EncryptFilesHelper.ps1` and replace the email inside `$recipient = "sid@crypteron.com"` to your OpenPGP/GnuPG keypair ID/name from the above step.
 5. Install these scripts by double clicking the `Install.bat` file.
 6. Encrypt your files by double clicking the `EncryptFiles.bat` file. You will be asked to select a folder and all files in there (including subfolders) will be encrypted. Specifically, all files NOT ending in `.gpg` will be considered for encryption and we use AES 256 for all our encryption. Optionally you can delete the leftover original unencrypted files after they have been encrypted. It's recommended to delete the unencrypted leftovers for a clean workflow (as long as you have a 'just in case' backup elsewhere).
 
@@ -44,6 +44,7 @@ During normal usage we automatically do a few things behind the scenes. We
 2. **Currently assumes a single authorized person for each file**. Files are  encrypted/re-encrypted for a single GPG key like `you@email.com`. So if you want to share that private financial spreadsheet with someone like `spouse@email.com` - that's currently not supported. To clarify, they may get the encrypted file via email or by sharing via the cloud service itself - but they won't be able to decrypt it and see anything inside.
 3. No continuous file system monitoring to detect new unencrypted files and encrypting them. Currently you must run the encryption script from the `Installation steps` stage periodically. Explore via something like `$monitor = New-Object System.IO.FileSystemWatcher` in the future ?
 4. Windows based: Although gpg and powershell are cross platform, the explorer based integration makes them Windows specific. Eventually we want to expand these powershell scripts to integrate with Finder (Mac) and Nautilus (Linux) too.
+5. Google Docs files (*.gdoc, *.gslides, *.gsheet, *.gdraw, *.gtable, *.gform) are skipped in reality those are only small pointer files on your hard drive. Your actual data is hidden behind a Google Docs API. If this concerns you and you want to 'own' your data and encrypt it, best to export all your Google Docs' into self-contained Office/OpenOffice document files.
 
 # Comments
 

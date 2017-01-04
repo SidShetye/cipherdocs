@@ -32,9 +32,6 @@ Installation takes seconds but encrypting all your files may take several minute
 
 You're set up! All files in the folder of your choice (e.g. your `Dropbox` folder) are now encrypted.
 
-# Usage
-1. Double click a file in Windows Explorer. That's it. View, edit etc as usual. If your GPG keys have a password, you may get prompted for the first time. GnuPG then remembers it for the next couple of sessions.
-
 ## How it works
 During normal usage we automatically do a few things behind the scenes. We
    - decrypt the file via GPG into a temporary local folder
@@ -45,7 +42,7 @@ During normal usage we automatically do a few things behind the scenes. We
 
 1. This may be obvious or subtle based on your background but other devices sync'd with your onedrive/dropbox/google drive won't be able to open the encrypted files without GPG (or these wrapper scripts) and your private GPG key installed on it. 
 2. **Currently assumes a single authorized person for each file**. Files are  encrypted/re-encrypted for a single GPG key like `you@email.com`. So if you want to share that private financial spreadsheet with someone like `spouse@email.com` - that's currently not supported. To clarify, they may get the encrypted file via email or by sharing via the cloud service itself - but they won't be able to decrypt it and see anything inside.
-3. No continuous file system monitoring to detect new unencrypted files and encrypting them. Currently you must run the encryption script from the `setup` stage periodically. Explore via something like `$monitor = New-Object System.IO.FileSystemWatcher` in the future ?
+3. No continuous file system monitoring to detect new unencrypted files and encrypting them. Currently you must run the encryption script from the `Installation steps` stage periodically. Explore via something like `$monitor = New-Object System.IO.FileSystemWatcher` in the future ?
 4. Windows based: Although gpg and powershell are cross platform, the explorer based integration makes them Windows specific. Eventually we want to expand these powershell scripts to integrate with Finder (Mac) and Nautilus (Linux) too.
 
 # Comments

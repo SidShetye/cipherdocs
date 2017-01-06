@@ -3,68 +3,44 @@ param (
     [boolean] $cleanupOriginals
 )
 
-# Edit this to be your own OpenPGP/GnuGP keypair name
-$recipient = "you@youremail.com"
-
-########################################################
-
-Function Get-InputFolderViaGui {
-    $shell = New-Object -ComObject "Shell.Application"
-    $folder = $shell.BrowseForFolder(0, "Select folder for encryption", 0)
-    if($folder) {
-        return $folder.self.Path
-    } else {
-        FatalError "No folder selected"
-    }
-}
-
-Function FatalError([string] $errMsg) {
-    Write-Host $errMsg -ForegroundColor Black -BackgroundColor Red
-    Write-Host "Press enter to terminate ..." -ForegroundColor Black -BackgroundColor Red
-    Read-Host
-    Exit 1
-}
+Import-Module -Name $PSScriptRoot\CipherDocs.psm1 -Force -DisableNameChecking
 
 Function EncryptFiles([Object[]] $files, [boolean] $cleanupOriginals) {
-    $i=1
+    $i=0
     foreach ($file in $files) {
         $i++
         $encFilePath = $file.FullName + ".gpg"
         if (-not (Test-Path $encFilePath)) {
-            Write-Host "[$i of $($files.Count)] Encrypting $file ..."
-            gpg --cipher-algo AES256 --encrypt --sign --recipient $recipient $file.FullName
+            Trace-Log "[$i of $($files.Count)] Encrypting $file ..."
+            gpg --output $encFilePath --cipher-algo AES256 --encrypt --sign --recipient $global:recipient $file.FullName 
             if ($cleanupOriginals) {
-                Write-Host "Deleting unencrypted leftover [$file]"
+                Trace-Log "Deleting unencrypted leftover [$file]"
                 Remove-Item $file.FullName -Force
             }
         } else {
-            Write-Host "WARNING: Skipping already encrypted file: $file" -BackgroundColor Black -ForegroundColor Red
+            Trace-Log "WARNING: Skipping already encrypted file: $file" -BackgroundColor Black -ForegroundColor Red
         }
     }
 }
 
-Function Get-CleanupDecisionViaGui() {
-    Write-Host "After encrypting, cleanup leftover unencrypted files?" -BackgroundColor DarkGreen -ForegroundColor White
-
-    $userAlert = New-Object -ComObject wscript.shell 
-    # 0 OK : 1 OK and Cancel : 2 Abort, Retry, and Ignore : 3 Yes, No, and Cancel : 4 Yes and No : 5 Retry and Cancel  
-    $alertType = 4
-
-    # Retry = 4, Cancel = 2, Yes = 6, No = 7
-    $userChoice = $userAlert.popup("After encryption, cleanup leftover unencrypted original files? Make sure you've got a backup", 0, "Delete confirmation", $alertType) 
+Function Get-CleanupDecision() {
+    $userChoice = AlertUser $("Delete unencrypted original leftover files after encryption? " + `
+                            "It is recommended you do remove for a cleaner workflow " + `
+                            "but make sure you have a backup.") 4
 
     $skipMessage = "Skipping deletion of unencrypted, original files"
-    if ($userChoice -eq 6) {
-        $userFinalWarning = $userAlert.popup("Are you sure we should cleanup leftover unencrypted original files after encryption?", 0, "Final confirmation", $alertType) 
-        if ($userFinalWarning -eq 6) {
+    if ($userChoice -like "yes") {
+        $userFinalWarning = AlertUser $("Are you sure we should cleanup leftover unencrypted original files " + `
+                                      "after encryption? Make sure you have a backup to keep around for the next few days") 4
+        if ($userFinalWarning -like "yes") {
             # Remove originals (!!!)
-            Write-Host "Ok, will cleanup unencrypted, original files after it's been encrypted."
+            Trace-Log "Ok, will cleanup unencrypted, original files after encryption."
             return $true
         } else {
-            Write-Host $skipMessage
+            Trace-Log $skipMessage
         }
     } else {
-        Write-Host $skipMessage
+        Trace-Log $skipMessage
     }
 
     return $false
@@ -78,23 +54,22 @@ $startTime = Get-Date
 $cleanupOriginals = $false 
 
 $helpMessage = @"
-This will encrypt all files in a folder (including subfolders) that 
-you be prompted for shortly. After encryption completes, you will 
-then be asked if you want to delete those unencrypted, original files. 
+Encrypt all files within a folder (including subfolders).
+
 It is suggested that you
 1. Create a backup of the folder you're about to encrypt. Keep it handy for a few 
-days until you're sure everything is ok (then delete the backup).
-2. Don't add any new files till the folder encryption completes
-3. Select Yes to delete the originals after encryption completes (You did backup, right?)
+days and if everything looks ok, delete that backup.
+2. Don't add any new files till the folder encryption completes - they can be skipped over
+3. Select Yes to delete leftover original file after their encryption (you did backup, right?)
 
-Now select the folder to encrypt
+Now pick the folder to encrypt
 "@
-Write-Host $helpMessage -BackgroundColor Black -ForegroundColor Green
+Trace-Log $helpMessage
 
 # If not CLI mode, prompt via GUI ...
 if ($folder -eq $null -or $folder -eq "") {
-    $folder = Get-InputFolderViaGui
-    $cleanupOriginals = Get-CleanupDecisionViaGui
+    $folder = GetFolderFromUser "Select the folder to encrypt"
+    $cleanupOriginals = Get-CleanupDecision
 }
 
 # Prepare file list and do encryption + cleanup operation
@@ -103,5 +78,5 @@ $files = Get-ChildItem $folder -Recurse -File -Exclude "*.gpg", "*.gdoc", "*.gsl
 EncryptFiles $files $cleanupOriginals
 $endTime = Get-Date
 
-Write-Host "Finished encrypting all files within $folder." -BackgroundColor DarkGreen -ForegroundColor White
-Write-Host "Total time was $($endTime - $startTime) for $($files.Count) files"
+Trace-Log "Finished encrypting all files within $folder." -BackgroundColor DarkGreen -ForegroundColor White
+Trace-Log "Total time was $($endTime - $startTime) for $($files.Count) files"

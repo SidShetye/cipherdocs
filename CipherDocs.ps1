@@ -2,25 +2,14 @@ param (
     [string] $filePath
 )
 
-# Edit this to be your own OpenPGP/GnuGP keypair name
-$recipient = "you@youremail.com"
-
-########################################################
-
-Function FatalException([string] $message) {
-    $userAlert = New-Object -ComObject wscript.shell 
-    $userAlert.popup($message, 0, "Error", 0)
-    throw [System.IO.IOException] $message
-}
+Import-Module -Name $PSScriptRoot\CipherDocs.psm1 -Force -DisableNameChecking
 
 Function GetTempFilePath([string] $origFilePath) {
     $tempDir = $env:Temp
     $attempt = 0
     $fileName = Split-Path $origFilePath -Leaf
-    # $fileNameOrig = $fileName.Substring(0, $fileName.LastIndexOf('.'))
     $fileNameOrig = [System.IO.Path]::GetFileNameWithoutExtension($fileName)
 
-    # $fileNameOrig 
     $tempClearFilePath = Join-Path $tempDir $fileNameOrig 
     while (Test-Path $tempClearFilePath) {
         # try to remove it first
@@ -43,69 +32,53 @@ Function GetTempFilePath([string] $origFilePath) {
     return $tempClearFilePath
 }
 
-Function FileHasChanged($fileState) {
-    $filePath = $fileState."path"
-    $timestamp = (Get-Item $fileState."path").LastWriteTimeUtc; 
-    
-    
-    if ($timestamp -eq ($fileState."timestamp")) {
-        Write-Host "timestamps identical"
-        return $false
-    }
+Confirm-DefaultEmailIsModified
 
-    $hash = (Get-FileHash $fileState."path").Hash 
-    if ($hash -eq ($fileState."hash")) {
-        Write-Host "hashes are identical"
-        return $false
-    }
-
-    return $true
-}
-
+# Write to console instead of text log file so we don't track user's ongoing 
+# activity. 
 Write-Host "Processing $filePath ..."
 $tempClearFilePath = GetTempFilePath $filePath
 
-## Decryption
+## Capture our starting encrypted file state
+$encFileStartState = Get-FileState $filePath
+
+## Decrypt 
 Write-Host "Decrypting to local temp folder [$tempClearFilePath] ... "
 do {
     gpg --output $tempClearFilePath --decrypt $filePath
     $decryptionErrorCode = $LASTEXITCODE 
-    # Write-Host "decryptionErrorCode is $decryptionErrorCode"
 
-    if ($decryptionErrorCode -ne 0) {
-        $userAlert = New-Object -ComObject wscript.shell 
-        # AlertType - Buttons/Description   
-        #0 Show OK button. 
-        #1 Show OK and Cancel buttons. 
-        #2 Show Abort, Retry, and Ignore buttons. 
-        #3 Show Yes, No, and Cancel buttons. 
-        #4 Show Yes and No buttons. 
-        #5 Show Retry and Cancel buttons. 
-        $alertType = 5
+    if ($decryptionErrorCode -ne 0) {        
+        $userChoice = AlertUser "Error during decryption. Should we retry or cancel?" 5
 
-        # Retry = 4
-        # Cancel = 2
-        $userChoice = $userAlert.popup("Error during decryption. Should we retry or cancel?", 0, "Decryption Error", $alertType) 
-    }
-
-    if ($userChoice -eq 2) {
-        throw "GnuPG decryption error. Aborting."
+        if ($userChoice -eq "cancel") {
+            FatalException "GnuPG decryption error. Aborting."
+        }
     }
 
 } while ($decryptionErrorCode -ne 0)
 
-# Measure and store current state
-$clearFileState = @{
-    "path" = $tempClearFilePath; 
-    "timestamp" = (Get-Item $tempClearFilePath).LastWriteTimeUtc; 
-    "hash" = (Get-FileHash $tempClearFilePath).Hash 
-}
+# Measure and store current state of clear file
+$clearFileState = Get-FileState $tempClearFilePath
 
 Write-Host "Opening the document ... "
-# Invoke-Item $tempClearFilePath 
-Start-Process -Wait $tempClearFilePath
+#TODO: This is quite flaky in Powershell ... if editor is already 
+#      open prior to this, it returns immmediately!
+#      better to monitor file periodically until handles == 0
+Start-Process $tempClearFilePath -Wait 
 
+# Editor closed, examine plaintext file
 if (FileHasChanged $clearFileState) {
+    if (FileHasChanged $encFileStartState) {
+		$outputEncFilepath = GetAnotherFilenameOnConflict $filePath
+        $msg = "$([System.IO.Path]::GetFileName($filePath)) was modified while you were editting it. " +
+               "Your copy was saved and will be encrypted to $outputEncFilepath instead. " +
+               "You need to manually merge file edits."
+        AlertUser $msg 0
+    } else {
+        $outputEncFilepath = $filePath
+    }
+
     Write-Host "Reencrypting the modified document ... "
 
     # TODO: Find all current recipients and then add each.
@@ -113,7 +86,7 @@ if (FileHasChanged $clearFileState) {
     # and then regex for "gpg: encrypted with 4096-bit RSA key, ID ABC12345, created 2016-03-18"
     # plucking out the 'ABC12345' IDs
     # To add multiple recipients: gpg --recipient first --recipient second --recipient third
-    gpg --batch --yes --cipher-algo AES256 --encrypt --output $filePath --sign --recipient $recipient $tempClearFilePath
+    gpg --batch --yes --cipher-algo AES256 --encrypt --output $outputEncFilepath --sign --recipient $global:recipient $tempClearFilePath
 }
 
 Write-Host "Done ..."

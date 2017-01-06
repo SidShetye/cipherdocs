@@ -26,7 +26,7 @@ Installation takes seconds but encrypting all your files may take several minute
 1. Install [Gpg4Win](https://www.gpg4win.org/download.html). Basically get the `.exe` file and run it. Need more help? [Look here](https://www.gpg4win.org/doc/en/gpg4win-compendium_11.html).
 2. Create your OpenPGP certificate/keypair. Try the Kleopatra tool installed by Gpg4Win. [Details here](https://www.gpg4win.org/doc/en/gpg4win-compendium_12.html) 
 3. Clone/download this repository of files
-4. Using Notepad, edit the top of `CipherDocs.ps1` and `EncryptFilesHelper.ps1` and replace the email inside `$recipient = "you@youremail.com"` to your OpenPGP/GnuPG keypair ID/name from the above step.
+4. Using Notepad, edit the top of `CipherDocs.ps1` and `EncryptFilesHelper.ps1` and replace the email inside `$global:recipient = "you@youremail.com"` to your OpenPGP/GnuPG keypair ID/name from the above step.
 5. Install these scripts by double clicking the `Install.bat` file.
 6. Encrypt your files by double clicking the `EncryptFiles.bat` file. You will be asked to select a folder and all files in there (including subfolders) will be encrypted. Specifically, all files NOT ending in `.gpg` will be considered for encryption and we use AES 256 for all our encryption. Optionally you can delete the leftover original unencrypted files after they have been encrypted. It's recommended to delete the unencrypted leftovers for a clean workflow (as long as you have a 'just in case' backup elsewhere).
 

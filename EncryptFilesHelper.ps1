@@ -30,8 +30,8 @@ Function Get-CleanupDecision() {
 
     $skipMessage = "Skipping deletion of unencrypted, original files"
     if ($userChoice -like "yes") {
-        $userFinalWarning = AlertUser $("Are you sure we should cleanup leftover unencrypted original files " + `
-                                      "after encryption? Make sure you have a backup to keep around for the next few days") 4
+        $userFinalWarning = AlertUser $("FINAL CONFIRMATION: Hit YES again to confirm cleanup of " + `
+                                      "leftover unencrypted original files after encryption.") 4
         if ($userFinalWarning -like "yes") {
             # Remove originals (!!!)
             Trace-Log "Ok, will cleanup unencrypted, original files after encryption."

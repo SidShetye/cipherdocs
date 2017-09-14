@@ -47,8 +47,8 @@ do {
 ReplaceStringInFile "you@youremail.com" $email $installFolder\CipherDocs.psm1
 
 Write-Host "Setup associations with Windows Explorer ..."
-Start-Process cmd -ArgumentList "/C Assoc .gpg=gpgfile"
-Start-Process cmd -ArgumentList '/C Ftype gpgfile="%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\powershell.exe" -ExecutionPolicy RemoteSigned -File %USERPROFILE%\Documents\WindowsPowerShell\Scripts\CipherDocs.ps1 "%1" "%*"'
+cmd /C Assoc .gpg=gpgfile
+cmd /C Ftype gpgfile="%SYSTEMROOT%\System32\WindowsPowerShell\v1.0\powershell.exe" -ExecutionPolicy RemoteSigned -File %USERPROFILE%\Documents\WindowsPowerShell\Scripts\CipherDocs.ps1 "%1" "%*"
 
 # Open
 Write-Host "Installation done. `n"
